@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fib Finder!</title>
+<!-- Built from ~/games-src/_shared (build.py). Edit the pieces there, not this file. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B3D4A">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fib Finder">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤥</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --grape:#0B3D4A; --grape-2:#125466; --sun:#FFD23F; --pink:#FF5C8A; --mint:#3DDC97;
+  --sky:#4CC9F0; --cream:#FFF6E0; --ink:#1A0B3A; --orange:#FF8E3C;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --grape:#08303A; --grape-2:#0E4553; } }
+:root[data-theme="dark"]{ --grape:#08303A; --grape-2:#0E4553; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; min-height:100%; color:var(--cream); font-family:"Nunito",system-ui,sans-serif; font-weight:800;
+  background:var(--grape);
+  background-image:radial-gradient(circle at 15% 10%, rgba(255,92,138,.25) 0 120px, transparent 121px),
+                   radial-gradient(circle at 90% 30%, rgba(76,201,240,.22) 0 90px, transparent 91px),
+                   radial-gradient(circle at 20% 85%, rgba(61,220,151,.18) 0 140px, transparent 141px);
+  background-attachment:fixed;
+}
+main{max-width:520px; margin:0 auto; padding:20px 18px 40px; text-align:center}
+h1,h2,.display{font-family:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif; font-weight:400; margin:0}
+.logo{font-size:clamp(56px,17vw,92px); line-height:.95; color:var(--sun); letter-spacing:1px;
+  text-shadow:0 5px 0 var(--pink), 0 10px 0 var(--ink); transform:rotate(-4deg); margin:18px 0 6px}
+.tag{color:var(--sky); font-size:18px; margin:14px 0 26px}
+h2{font-size:32px; color:var(--sun); margin:6px 0 14px; text-shadow:0 3px 0 var(--ink)}
+p{line-height:1.5; margin:8px 0}
+.btn{
+  display:block; width:100%; border:0; cursor:pointer; font:inherit; font-family:"Lilita One",system-ui,sans-serif;
+  font-size:26px; padding:16px 18px; border-radius:22px; color:var(--ink); background:var(--sun);
+  box-shadow:0 7px 0 var(--ink); margin:14px 0; transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translateY(5px); box-shadow:0 2px 0 var(--ink)}
+.btn.pink{background:var(--pink); color:var(--cream)}
+.btn.mint{background:var(--mint)}
+.btn.sky{background:var(--sky)}
+.btn.ghost{background:transparent; color:var(--cream); box-shadow:none; font-size:18px; font-family:"Nunito",sans-serif; text-decoration:underline; padding:8px}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+:focus-visible{outline:4px solid var(--sky); outline-offset:3px}
+.panel{background:var(--grape-2); border:4px solid var(--ink); border-radius:26px; padding:18px; margin:16px 0; box-shadow:0 8px 0 var(--ink)}
+.rules{text-align:left; font-size:17px}
+.rules ol,.rules ul{padding-left:22px; margin:6px 0} .rules li{margin:6px 0}
+.stepper{display:flex; align-items:center; justify-content:center; gap:18px}
+.stepper button{width:64px; height:64px; border-radius:50%; font-size:34px; padding:0; margin:0; display:grid; place-items:center}
+.count{font-family:"Lilita One",sans-serif; font-size:64px; min-width:90px; color:var(--sun)}
+.chips{display:flex; flex-wrap:wrap; gap:10px; justify-content:center}
+.chip{border:3px solid var(--ink); background:var(--cream); color:var(--ink); font:inherit; font-size:17px; padding:10px 14px; border-radius:999px; cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--pink); color:var(--cream); transform:scale(1.06)}
+.code{font-family:"Lilita One",sans-serif; font-size:clamp(60px,20vw,96px); letter-spacing:10px; color:var(--ink);
+  background:var(--sun); border-radius:22px; padding:6px 10px 2px 20px; display:inline-block; box-shadow:0 7px 0 var(--ink); margin:6px 0 10px}
+.cat{font-family:"Lilita One",sans-serif; font-size:30px; color:var(--mint)}
+.wheel-wrap{position:relative; width:min(330px,82vw); margin:18px auto 6px}
+.wheel-wrap svg{width:100%; height:auto; display:block; filter:drop-shadow(0 8px 0 var(--ink))}
+#wheel{transform-origin:50% 50%; transition:transform 4.2s cubic-bezier(.12,.75,.12,1)}
+.pointer{position:absolute; left:50%; top:-14px; transform:translateX(-50%); width:0; height:0;
+  border-left:20px solid transparent; border-right:20px solid transparent; border-top:34px solid var(--cream);
+  filter:drop-shadow(0 4px 0 var(--ink)); z-index:2}
+.big-msg{font-family:"Lilita One",sans-serif; font-size:30px; color:var(--sun); min-height:40px; margin:8px 0}
+.reveal-word{font-family:"Lilita One",sans-serif; font-size:44px; color:var(--cream)}
+input.codein{width:100%; font-family:"Lilita One",sans-serif; font-size:56px; text-align:center; letter-spacing:12px;
+  text-transform:uppercase; border:4px solid var(--ink); border-radius:22px; padding:8px; background:var(--cream); color:var(--ink)}
+.seats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+.seat{font-family:"Lilita One",sans-serif; font-size:30px; aspect-ratio:1; border-radius:18px; border:4px solid var(--ink);
+  background:var(--sky); color:var(--ink); cursor:pointer}
+.seat[aria-pressed="true"]{background:var(--sun); transform:scale(1.08)}
+.err{color:var(--pink); min-height:24px}
+.card{border-radius:28px; border:5px solid var(--ink); padding:26px 18px; box-shadow:0 10px 0 var(--ink); margin:18px 0}
+.card.crew{background:var(--mint); color:var(--ink)}
+.card.imp{background:var(--pink); color:var(--cream)}
+.card .small{font-size:18px}
+.card .word{font-family:"Lilita One",sans-serif; font-size:clamp(44px,13vw,64px); line-height:1.05; margin:10px 0}
+.hidden{display:none !important}
+.note{font-size:15px; opacity:.85}
+.revnum{font-family:"Lilita One",sans-serif; font-size:72px; color:var(--ink); background:var(--cream); border-radius:20px; display:inline-block; padding:0 22px; box-shadow:0 6px 0 var(--ink); margin:6px 0}
+.overlay{position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px)); animation:pop .5s ease-out}
+.overlay.good{background:#1FBF6A; color:#08311B}
+.overlay.bad{background:#E5263E; color:#FFF6E0}
+.overlay.sneaky{background:#7B3FE4; color:#FFF6E0}
+.overlay.close{background:#FF8E3C; color:#1A0B3A}
+.overlay .huge{font-family:"Lilita One",sans-serif; font-size:clamp(56px,18vw,110px); line-height:1; margin:10px 0}
+.overlay p{font-size:22px; max-width:420px}
+.overlay .btn{max-width:360px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05);opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){ .overlay{animation:none} }
+@media (prefers-reduced-motion: reduce){ #wheel{transition-duration:.6s} .btn,.chip,.seat{transition:none} }
+.namein{width:100%; font:inherit; font-size:26px; text-align:center; border:4px solid var(--ink); border-radius:18px; padding:10px; background:var(--cream); color:var(--ink); margin:6px 0}
+.qr{background:var(--cream); border:4px solid var(--ink); border-radius:20px; padding:12px; display:inline-block; box-shadow:0 6px 0 var(--ink)}
+.qr img,.qr canvas{display:block; width:200px; height:200px}
+.plist{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:6px 0}
+.pchip{border:3px solid var(--ink); background:var(--sky); color:var(--ink); border-radius:999px; padding:8px 14px; font-size:18px; font:inherit}
+.pchip.me{background:var(--sun)}
+.pchip.away{opacity:.45}
+button.pchip{cursor:pointer}
+.status{color:var(--sky); min-height:24px}
+.banner{position:fixed; left:0; right:0; top:0; z-index:40; background:var(--pink); color:var(--cream); padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px; font-size:16px}
+.cardbtn{min-height:160px; font-size:30px}
+.vlist{display:grid; gap:10px}
+.vbtn{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; border:4px solid var(--ink); border-radius:18px;
+  background:var(--cream); color:var(--ink); font:inherit; font-size:24px; padding:12px 16px; cursor:pointer; text-align:left}
+.vbtn[aria-pressed="true"]{background:var(--sun); transform:scale(1.03)}
+.vbtn.imp{background:var(--pink); color:var(--cream)}
+.badge{font-family:"Lilita One",sans-serif; min-width:48px; text-align:center; background:var(--grape); color:var(--sun); border-radius:999px; padding:4px 10px; font-size:22px}
+.hostbox{border-style:dashed}
+.pulse{animation:pulse 1s ease-in-out infinite alternate}
+@keyframes pulse{to{transform:scale(1.04)}}
+.countdown{font-family:"Lilita One",sans-serif; font-size:160px; color:var(--sun)}
+.overlay.wait{background:var(--grape)}
+@media (prefers-reduced-motion: reduce){ .pulse{animation:none} }
+
+.toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(20px + env(safe-area-inset-bottom,0px)); z-index:60; max-width:min(92vw,440px);
+  background:var(--cream); color:var(--ink); border:4px solid var(--ink); border-radius:18px; padding:12px 16px; font-size:18px; box-shadow:0 6px 0 var(--ink)}
+.vbtn.mine{outline:4px solid var(--sun); outline-offset:-2px}
+.textin{width:100%; font:inherit; font-size:24px; text-align:center; border:4px solid var(--ink); border-radius:18px; padding:12px; background:var(--cream); color:var(--ink)}
+.q{font-family:"Lilita One",sans-serif; font-size:clamp(28px,8vw,38px); line-height:1.15; color:var(--cream); margin:8px 0}
+.small{font-size:15px; opacity:.9}
+.who{font-size:15px; opacity:.9; font-weight:600}
+
+</style>
+</head>
+<body>
+<div id="banner" class="banner hidden" role="status"></div>
+<main>
+<section id="home">
+  <div class="logo">Fib Finder!</div>
+  <p class="tag">Make up a fake answer. Fool your family. Find the truth.</p>
+  <button class="btn" id="goHost">Host the game</button>
+  <button class="btn sky" id="goJoin">Join as a player</button>
+  <button class="btn pink" id="goGuide">📖 How to play</button>
+  <div class="panel rules">
+    <h2 style="font-size:26px">Quick rules</h2>
+    <ol>
+      <li>Everyone sees a strange-but-true fact with a word missing.</li>
+      <li>Type a <b>fake answer</b> that sounds real.</li>
+      <li>All the answers get mixed up with the real one. Pick the one you think is <b>true</b>.</li>
+      <li><b>+2</b> for finding the truth. <b>+1</b> for everyone your fib fools!</li>
+    </ol>
+  </div>
+</section>
+
+<section id="guide" class="hidden">
+  <h2>📖 How to play</h2>
+  <div class="panel rules">
+    <h2 style="font-size:24px">The idea</h2>
+    <p>Each round shows a weird-but-true fact with a blank, like "A group of flamingos is called a ___." Everyone secretly types a fake answer. Then all the fakes and the real answer are mixed together, and you try to find the real one while fooling everyone else with your fib.</p>
+  </div>
+  <div class="panel rules">
+    <h2 style="font-size:24px">What you need</h2>
+    <ul><li>3 to 12 players in the same room.</li><li>One phone or tablet each, with internet.</li><li>About 2 minutes a question.</li></ul>
+  </div>
+  <div class="panel rules">
+    <h2 style="font-size:24px">Set up</h2>
+    <ol>
+      <li><b>One person hosts.</b> They tap <b>Host the game</b>, type their name and tap <b>Create game</b>. The host plays too.</li>
+      <li><b>Everyone else</b> scans the QR code on the host's screen (or taps <b>Join as a player</b> and types the 4-letter code), types their name and taps <b>Join</b>.</li>
+      <li>The host picks a <b>category</b> (or 🎲 Mix it up) and taps <b>Start game</b>.</li>
+    </ol>
+  </div>
+  <div class="panel rules">
+    <h2 style="font-size:24px">Each question</h2>
+    <ol>
+      <li><b>Write a fib.</b> Read the fact, type a fake answer that sounds believable, tap <b>Send my fib</b>. Keep it secret!</li>
+      <li>If you accidentally type the real answer, the game tells you. Lucky you, but you have to pick something else!</li>
+      <li><b>Find the truth.</b> When everyone has sent a fib, all the answers appear on every phone. Tap the one you think is real. (Your own fib isn't shown to you.)</li>
+      <li><b>Reveal.</b> When everyone has picked, the answer appears with who wrote each fib and who fell for it.</li>
+      <li>The host taps <b>Next question</b>. Play as many as you like, then tap <b>Finish game</b> to see the winner.</li>
+    </ol>
+  </div>
+  <div class="panel rules">
+    <h2 style="font-size:24px">Points</h2>
+    <ul><li><b>+2</b> for picking the real answer.</li><li><b>+1</b> for every player who picks your fib.</li><li>Most points when you finish wins 🏆</li></ul>
+  </div>
+  <div class="panel rules">
+    <h2 style="font-size:24px">Tips</h2>
+    <ul><li>The best fibs sound boring and real, not silly.</li><li>Copy the style: if the blank wants a number, write a number.</li><li>Kids: a parent can help with spelling. The game doesn't care about capitals.</li></ul>
+  </div>
+  <div class="panel rules">
+    <h2 style="font-size:24px">If something goes wrong</h2>
+    <ul><li><b>"Can't find game":</b> check the 4-letter code on the host's screen.</li><li><b>A phone drops out:</b> open the game again; it reconnects by itself.</li><li><b>Someone is stuck:</b> the host can tap <b>Skip ahead</b> to move on without them.</li><li>The <b>host's phone must stay on this game</b> until you finish.</li></ul>
+  </div>
+  <button class="btn" data-guideback>Back</button>
+</section>
+
+<section id="hostStart" class="hidden">
+  <h2>Host a game</h2>
+  <div class="panel">
+    <label for="hostName"><p>Your name</p></label>
+    <input class="namein" id="hostName" maxlength="12" autocomplete="off">
+    <p class="err" id="hostErr" aria-live="polite"></p>
+  </div>
+  <button class="btn mint" id="createGame">Create game</button>
+  <button class="btn ghost" data-home>Back</button>
+</section>
+
+<section id="joinStart" class="hidden">
+  <h2>Join a game</h2>
+  <div class="panel">
+    <label for="roomIn"><p>Game code</p></label>
+    <input class="codein" id="roomIn" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <label for="joinName"><p>Your name</p></label>
+    <input class="namein" id="joinName" maxlength="12" autocomplete="off">
+    <p class="err" id="joinErr" aria-live="polite"></p>
+  </div>
+  <button class="btn mint" id="joinBtn">Join</button>
+  <button class="btn ghost" data-home>Back</button>
+</section>
+
+<section id="connecting" class="hidden">
+  <h2>Connecting…</h2>
+  <p class="status" id="connMsg">Finding the game</p>
+  <button class="btn ghost" data-home>Cancel</button>
+</section>
+
+<section id="lobby" class="hidden">
+  <div id="lobbyHost" class="hidden">
+    <p>Scan to join, or type the game code</p>
+    <div class="qr" id="qr"></div>
+    <div><div class="code" id="roomShow">----</div></div>
+    <p class="note" id="joinLink"></p>
+    <p class="err" id="qrWarn"></p>
+    <button class="btn sky" id="shareBtn">Share game link</button>
+  </div>
+  <div id="lobbyPlayer" class="hidden">
+    <h2 id="youreIn"></h2>
+    <p>Waiting for the host to start the game…</p>
+  </div>
+  <div class="panel">
+    <p id="joinedCount"></p>
+    <div class="plist" id="plist"></div>
+    <p class="note hidden" id="removeNote">Host: tap a name to remove that player.</p>
+  </div>
+  <div id="lobbyCtl" class="hidden">
+    <div class="panel hostbox" id="chipBox">
+      <p>Pick a category</p>
+      <div class="chips" id="chips"></div>
+    </div>
+    <button class="btn mint" id="startBtn">Start game</button>
+    <p class="note" id="startNote"></p>
+  </div>
+</section>
+
+<section id="write" class="hidden">
+  <p class="cat" id="wCat"></p>
+  <div class="panel"><div class="q" id="wQ"></div></div>
+  <div id="wForm">
+    <label for="fibIn"><p>Your fake answer</p></label>
+    <input class="textin" id="fibIn" maxlength="40" autocomplete="off" spellcheck="false">
+    <button class="btn mint" id="fibBtn">Send my fib</button>
+  </div>
+  <div id="wDone" class="hidden panel"><p>Your fib: <b id="wMine"></b></p><button class="btn ghost" id="fibEdit">Change it</button></div>
+  <p class="big-msg" id="wCount" aria-live="polite"></p>
+  <div id="wCtl" class="hidden"><button class="btn sky" id="skipWrite">Skip ahead: show answers</button></div>
+</section>
+
+<section id="pick" class="hidden">
+  <p class="cat" id="pCat"></p>
+  <div class="panel"><div class="q" id="pQ"></div></div>
+  <p>Which one is the <b>real</b> answer?</p>
+  <div class="vlist" id="pList"></div>
+  <p class="big-msg" id="pCount" aria-live="polite"></p>
+  <div id="pCtl" class="hidden"><button class="btn" id="skipPick">Skip ahead: reveal</button></div>
+</section>
+
+<section id="reveal" class="hidden">
+  <div class="panel"><div class="q" id="rQ"></div><p>The real answer:</p><div class="reveal-word" id="rA"></div></div>
+  <div class="vlist" id="rList"></div>
+  <h2 style="font-size:26px;margin-top:18px">Scores</h2>
+  <div class="vlist" id="rScores"></div>
+  <button class="btn sky" id="seeMine">See my result again</button>
+  <div id="rCtl" class="hidden">
+    <button class="btn mint" id="nextQ">Next question</button>
+    <button class="btn ghost" id="finish">Finish game</button>
+  </div>
+  <p class="note hidden" id="rWait">Waiting for the host…</p>
+</section>
+
+<section id="final" class="hidden">
+  <h2>Final scores</h2>
+  <div class="logo" style="font-size:44px" id="winner"></div>
+  <div class="vlist" id="fScores"></div>
+  <div id="fCtl" class="hidden"><button class="btn mint" id="againBtn">Play again</button></div>
+  <p class="note hidden" id="fWait">Waiting for the host to start a new game…</p>
+</section>
+
+<section id="waiting" class="hidden">
+  <h2>Round in progress</h2>
+  <p>You're in! You'll join the next round.</p>
+</section>
+
+<section id="ended" class="hidden">
+  <h2 id="endedMsg">Game over</h2>
+  <button class="btn" data-home>Back to start</button>
+</section>
+
+</main>
+<div id="overlay" class="overlay hidden" role="alert"></div>
+<div id="toast" class="toast hidden" role="status"></div>
+<script>
+(function(){
+"use strict";
+var CATS=[
+ {name:"Animals",emoji:"🦩",qs:[
+  ["A group of flamingos is called a ___.","flamboyance"],
+  ["A baby kangaroo is called a ___.","joey"],
+  ["A group of owls is called a ___.","parliament"],
+  ["An octopus has ___ hearts.","three|3"],
+  ["A group of crows is called a ___.","murder"],
+  ["A shrimp's heart is in its ___.","head"],
+  ["Sea otters hold ___ while they sleep so they don't float apart.","hands|paws"],
+  ["A group of jellyfish is called a ___.","smack"],
+  ["Butterflies taste things with their ___.","feet"],
+  ["Wombat poo is shaped like ___.","cubes|cube"],
+  ["A baby goat is called a ___.","kid"],
+  ["The only mammal that can really fly is the ___.","bat"]]},
+ {name:"Food",emoji:"🍓",qs:[
+  ["Peanuts aren't really nuts. They're ___.","beans|legumes|legume|bean"],
+  ["Pavlova is named after a famous Russian ___.","ballerina|ballet dancer|dancer"],
+  ["Carrots used to be ___ before farmers grew orange ones.","purple"],
+  ["Strawberries are the only fruit with their seeds on the ___.","outside"],
+  ["In the 1830s, tomato ketchup was sold as a ___.","medicine"],
+  ["Bananas grow pointing ___.","up|upwards"],
+  ["Honey found in ancient Egyptian tombs was still safe to ___.","eat"],
+  ["Apples float in water because they are about 25% ___.","air"]]},
+ {name:"Space & Earth",emoji:"🪐",qs:[
+  ["A day on Venus is longer than a ___ on Venus.","year"],
+  ["The hottest planet in our solar system is ___.","venus"],
+  ["The biggest desert in the world is ___.","antarctica"],
+  ["There are more ___ on Earth than stars in our galaxy.","trees"],
+  ["Footprints left on the ___ could last millions of years.","moon"],
+  ["Saturn is so light it would ___ in a giant bath.","float"],
+  ["The national animal of Scotland is the ___.","unicorn"],
+  ["The Eiffel Tower gets about 15 cm ___ in summer.","taller|bigger|higher"]]},
+ {name:"Aotearoa NZ",emoji:"🥝",qs:[
+  ["In 1893 New Zealand became the first country where women could ___.","vote"],
+  ["The kākāpō is the world's only flightless ___.","parrot"],
+  ["New Zealand's longest river is the ___ River.","waikato"],
+  ["The pōhutukawa is known as New Zealand's ___ tree.","christmas"],
+  ["Compared to its body, the kiwi lays one of the biggest ___ of any bird.","eggs|egg"],
+  ["New Zealand's tallest mountain is ___.","aoraki|mount cook|mt cook|aoraki mount cook"]]},
+ {name:"Body & inventions",emoji:"💡",qs:[
+  ["The smallest bone in your body is in your ___.","ear"],
+  ["An adult human has ___ bones.","206"],
+  ["Bubble wrap was first invented to be ___.","wallpaper"],
+  ["Play-Doh was first made for cleaning ___.","wallpaper"],
+  ["The very first YouTube video was filmed at a ___.","zoo"],
+  ["The ice block on a stick was invented by an 11-year-old by ___.","accident|mistake"],
+  ["Hippos make a sweat that looks ___.","red|pink|orange"]]}
+];
+var CFG={name:"Fib Finder!",prefix:"nzc-fibfinder-v1-",key:"fib",min:3,max:12,cats:CATS,screens:["write","pick","reveal","final"]};
+function norm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/^\s*(a|an|the)\s+/,"").replace(/[^a-z0-9]/g,"");}
+function cleanText(s){return String(s||"").replace(/\s+/g," ").trim().slice(0,40);}
+
+
+/* ===== Shared party-game engine (same mechanics as Imposter!) =====
+   One phone hosts (and plays); other phones join with a QR code / 4-letter code over PeerJS.
+   The game file defines CFG (name, prefix, key, min/max players) and G (start/action/view/render). */
+var $=function(id){return document.getElementById(id);};
+function el(tag,props){var e=document.createElement(tag);if(props)for(var k in props){var v=props[k];
+  if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e[k]=v;else e.setAttribute(k,v);}
+  for(var i=2;i<arguments.length;i++){var c=arguments[i];if(c!=null)e.append(c);}return e;}
+function store(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function load(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function rnd(n){return Math.floor(Math.random()*n);}
+function shuffle(a){a=a.slice();for(var j=a.length-1;j>0;j--){var k=rnd(j+1),t=a[j];a[j]=a[k];a[k]=t;}return a;}
+function cleanName(s){return (s||"").replace(/\s+/g," ").trim().slice(0,12);}
+var ALPHA="ABCDEFGHJKLMNPRSTUVWXYZ";
+var SCREENS=["home","guide","hostStart","joinStart","connecting","lobby","waiting","ended"].concat(CFG.screens);
+function show(id){SCREENS.forEach(function(s){$(s).classList.toggle("hidden",s!==id);});}
+function banner(msg){$("banner").textContent=msg||"";$("banner").classList.toggle("hidden",!msg);}
+var toastT=null;
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.remove("hidden");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.add("hidden");},3500);}
+document.querySelectorAll("[data-home]").forEach(function(b){b.onclick=function(){location.href=location.pathname;};});
+var cid=load(CFG.key+"_cid"); if(!cid){cid="c"+Math.random().toString(36).slice(2,10);store(CFG.key+"_cid",cid);}
+function keepAwake(){try{if(navigator.wakeLock&&document.visibilityState==="visible")navigator.wakeLock.request("screen").catch(function(){});}catch(e){}}
+var onVisible=null;
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){keepAwake();if(onVisible)onVisible();}});
+
+/* ---------- HOST ---------- */
+var H=null;
+function hostCreate(name){
+  H={code:"",peer:null,players:{},order:[],conns:{},phase:"lobby",round:0,catChoice:-1,g:{}};
+  H.players.HOST={id:"HOST",name:name,connected:true,inRound:false,score:0};H.order.push("HOST");
+  tryOpen(0);
+}
+function tryOpen(attempt){
+  var code="";for(var i=0;i<4;i++)code+=ALPHA[rnd(ALPHA.length)];
+  H.code=code;show("connecting");$("connMsg").textContent="Setting up your game…";
+  var peer=new Peer(CFG.prefix+code);H.peer=peer;
+  peer.on("open",function(){
+    keepAwake();
+    window.addEventListener("beforeunload",function(e){if(H&&H.order.length>1){e.preventDefault();e.returnValue="";}});
+    hostBroadcast();
+  });
+  peer.on("connection",function(conn){
+    conn.on("data",function(m){hostHandle(conn,m);});
+    conn.on("close",function(){hostDrop(conn);});
+    conn.on("error",function(){hostDrop(conn);});
+  });
+  peer.on("disconnected",function(){try{peer.reconnect();}catch(e){}});
+  peer.on("error",function(err){
+    if(err&&err.type==="unavailable-id"&&attempt<5){peer.destroy();tryOpen(attempt+1);return;}
+    if(err&&err.type==="peer-unavailable")return;
+    if(!peer.open){show("ended");$("endedMsg").textContent="Couldn't start the game. Check the internet connection and try again.";}
+  });
+}
+function hostDrop(conn){
+  for(var id in H.conns){if(H.conns[id]===conn){delete H.conns[id];if(H.players[id])H.players[id].connected=false;}}
+  hostBroadcast();
+}
+function hostHandle(conn,m){
+  if(!m||typeof m!=="object")return;
+  if(m.t==="join"){
+    var id=String(m.cid||"").slice(0,20),name=cleanName(m.name);
+    if(!id||!name){conn.send({t:"error",msg:"Type your name first."});return;}
+    var p=H.players[id];
+    if(!p){
+      for(var k in H.players){if(H.players[k].name.toLowerCase()===name.toLowerCase()){conn.send({t:"error",msg:"Someone already has the name "+name+". Try adding a letter."});return;}}
+      if(H.order.length>=CFG.max){conn.send({t:"error",msg:"The game is full ("+CFG.max+" players)."});return;}
+      p={id:id,name:name,connected:true,inRound:false,score:0};H.players[id]=p;H.order.push(id);
+    }
+    if(H.conns[id]&&H.conns[id]!==conn){try{H.conns[id].close();}catch(e){}}
+    H.conns[id]=conn;p.connected=true;
+    hostBroadcast();return;
+  }
+  var pid=null;for(var c in H.conns){if(H.conns[c]===conn)pid=c;}
+  if(pid&&H.players[pid])G.action(pid,m);
+}
+function tell(pid,msg){if(pid==="HOST"){toast(msg);return;}var c=H.conns[pid];if(c){try{c.send({t:"toast",msg:msg});}catch(e){}}}
+function roster(){return H.order.filter(function(id){return H.players[id]&&H.players[id].inRound;});}
+function seatPlayers(){
+  var ids=H.order.filter(function(id){return H.players[id].connected;});
+  H.order.forEach(function(id){H.players[id].inRound=ids.indexOf(id)>=0;});
+  return ids;
+}
+function nameOf(id){return H.players[id]?H.players[id].name:"?";}
+function viewFor(id){
+  var p=H.players[id];
+  var v={t:"state",code:H.code,phase:H.phase,round:H.round,me:id,isHost:id==="HOST",catChoice:H.catChoice,
+    players:H.order.map(function(i){var q=H.players[i];return{id:i,name:q.name,connected:q.connected,host:i==="HOST",score:q.score};}),
+    inRound:H.phase!=="lobby"&&p.inRound};
+  if(H.phase!=="lobby")G.view(id,v);
+  return v;
+}
+function hostBroadcast(){
+  for(var id in H.conns){try{H.conns[id].send(viewFor(id));}catch(e){}}
+  render(viewFor("HOST"));
+}
+function hostRemove(id){
+  if(id==="HOST"||H.phase!=="lobby")return;
+  if(!confirm("Remove "+H.players[id].name+" from the game?"))return;
+  if(H.conns[id]){try{H.conns[id].send({t:"kicked"});}catch(e){}var c=H.conns[id];setTimeout(function(){try{c.close();}catch(e){}},300);delete H.conns[id];}
+  delete H.players[id];H.order=H.order.filter(function(x){return x!==id;});hostBroadcast();
+}
+function hostStart(){
+  var ids=H.order.filter(function(id){return H.players[id].connected;});
+  if(ids.length<CFG.min)return;
+  H.order.forEach(function(id){H.players[id].score=0;});
+  G.start();
+}
+function hostToLobby(){H.phase="lobby";H.g={};H.order.forEach(function(id){H.players[id].inRound=false;});hostBroadcast();}
+
+/* ---------- PLAYER ---------- */
+var P=null;
+function playerJoin(code,name){
+  P={code:code,name:name,peer:null,conn:null,kicked:false,joined:false,retry:null};
+  show("connecting");$("connMsg").textContent="Finding game "+code+"…";
+  var peer=new Peer();P.peer=peer;
+  peer.on("open",function(){connect();});
+  peer.on("disconnected",function(){try{peer.reconnect();}catch(e){}});
+  peer.on("error",function(err){
+    if(err&&err.type==="peer-unavailable"){
+      if(!P.joined){joinFail("Can't find game "+code+". Check the code on the host's screen.");}
+      else{banner("Lost the host. Trying again…");scheduleRetry();}
+      return;
+    }
+    if(!P.joined)joinFail("Couldn't connect. Check the internet and try again.");
+  });
+  onVisible=function(){if(P&&P.joined&&!(P.conn&&P.conn.open))connect();};
+}
+function joinFail(msg){show("joinStart");$("joinErr").textContent=msg;try{P.peer.destroy();}catch(e){}P=null;}
+function scheduleRetry(){if(!P||P.kicked)return;clearTimeout(P.retry);P.retry=setTimeout(connect,3000);}
+function connect(){
+  if(!P||P.kicked)return;
+  if(P.peer.disconnected){try{P.peer.reconnect();}catch(e){}}
+  var conn=P.peer.connect(CFG.prefix+P.code,{reliable:true});P.conn=conn;
+  conn.on("open",function(){conn.send({t:"join",cid:cid,name:P.name});});
+  conn.on("data",function(m){
+    if(!m)return;
+    if(m.t==="error"){if(!P.joined)joinFail(m.msg);return;}
+    if(m.t==="toast"){toast(m.msg);return;}
+    if(m.t==="kicked"){P.kicked=true;show("ended");$("endedMsg").textContent="The host removed you from the game.";return;}
+    if(m.t==="state"){P.joined=true;banner("");render(m);}
+  });
+  conn.on("close",function(){if(P&&P.joined&&!P.kicked){banner("Lost the host. Reconnecting…");scheduleRetry();}});
+}
+function send(m){
+  if(H){G.action("HOST",m);return;}
+  if(P&&P.conn&&P.conn.open)P.conn.send(m);
+}
+
+/* ---------- SHARED UI ---------- */
+var V=null,qrMade=false,stage="";
+function render(v){
+  V=v;
+  if(stage!==v.phase+"/"+v.round){stage=v.phase+"/"+v.round;$("overlay").className="overlay hidden";}
+  if(v.phase==="lobby"){renderLobby(v);show("lobby");return;}
+  if(!v.inRound){show("waiting");return;}
+  G.render(v);
+}
+function renderLobby(v){
+  $("lobbyHost").classList.toggle("hidden",!v.isHost);
+  $("lobbyCtl").classList.toggle("hidden",!v.isHost);
+  $("removeNote").classList.toggle("hidden",!v.isHost||v.players.length<2);
+  $("lobbyPlayer").classList.toggle("hidden",v.isHost);
+  var me=v.players.filter(function(p){return p.id===v.me;})[0];
+  $("youreIn").textContent="You're in, "+(me?me.name:"")+"!";
+  var on=v.players.filter(function(p){return p.connected;}).length;
+  $("joinedCount").textContent=on+" of "+CFG.max+" players in the game";
+  var box=$("plist");box.innerHTML="";
+  v.players.forEach(function(p){
+    var label=p.name+(p.id===v.me?" (you)":"")+(p.host?" 👑":"")+(p.connected?"":" (away)");
+    var cls="pchip"+(p.id===v.me?" me":"")+(p.connected?"":" away");
+    box.append(v.isHost&&!p.host?el("button",{class:cls,text:label,onclick:function(){hostRemove(p.id);}}):el("span",{class:cls,text:label}));
+  });
+  if(v.isHost){
+    $("roomShow").textContent=v.code;
+    if(!qrMade){qrMade=true;var url=joinUrl(v.code);$("joinLink").textContent=url;
+      if(!/^https?:/.test(location.protocol)){$("qrWarn").textContent="Open the game from its web link so the QR code works on phones.";$("qr").classList.add("hidden");}
+      else if(window.QRCode){new QRCode($("qr"),{text:url,width:200,height:200,colorDark:"#1A0B3A",colorLight:"#FFF6E0",correctLevel:QRCode.CorrectLevel.M});}
+      else{$("qr").classList.add("hidden");$("qrWarn").textContent="The QR code couldn't load. Players can type the game code instead.";}}
+    var chips=$("chips");chips.innerHTML="";
+    $("chipBox").classList.toggle("hidden",!CFG.cats);
+    if(CFG.cats)[{i:-1,label:"🎲 Mix it up"}].concat(CFG.cats.map(function(c,i){return{i:i,label:c.emoji+" "+c.name};})).forEach(function(o){
+      chips.append(el("button",{class:"chip",text:o.label,"aria-pressed":String(o.i===H.catChoice),onclick:function(){H.catChoice=o.i;renderLobby(viewFor("HOST"));}}));
+    });
+    $("startBtn").disabled=on<CFG.min;
+    $("startNote").textContent=on<CFG.min?"You need at least "+CFG.min+" players, including you.":"Tap Start when everyone has joined.";
+  }
+}
+function scoreBoard(v,box){
+  box.innerHTML="";
+  v.players.slice().sort(function(a,b){return b.score-a.score;}).forEach(function(p,i){
+    box.append(el("div",{class:"vbtn"+(p.id===v.me?" mine":"")},el("span",{text:(i===0&&p.score>0?"🏆 ":"")+p.name+(p.id===v.me?" (you)":"")}),el("span",{class:"badge",text:String(p.score)})));
+  });
+}
+function overlay(cls,big,lines){
+  var o=$("overlay");o.className="overlay "+cls;o.innerHTML="";
+  o.append(el("div",{class:"huge",text:big}));
+  lines.forEach(function(l){o.append(el("p",{text:l}));});
+  o.append(el("button",{class:"btn",text:"OK",onclick:function(){o.className="overlay hidden";}}));
+}
+function joinUrl(code){return location.origin+location.pathname.replace(/index\.html$/,"")+"?room="+code;}
+$("shareBtn").onclick=function(){
+  if(!H)return;var url=joinUrl(H.code);
+  if(navigator.share){navigator.share({title:CFG.name,text:"Join my "+CFG.name+" game! Code: "+H.code,url:url}).catch(function(){});return;}
+  if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){$("shareBtn").textContent="Link copied!";}).catch(function(){});}
+};
+$("startBtn").onclick=function(){if(H)hostStart();};
+if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+$("goHost").onclick=function(){$("hostName").value=load(CFG.key+"_name")||"";show("hostStart");$("hostName").focus();};
+$("goJoin").onclick=function(){openJoin("");};
+$("goGuide").onclick=function(){show("guide");window.scrollTo(0,0);};
+document.querySelectorAll("[data-guideback]").forEach(function(b){b.onclick=function(){show("home");window.scrollTo(0,0);};});
+function openJoin(code){$("roomIn").value=code||"";$("joinName").value=load(CFG.key+"_name")||"";$("joinErr").textContent="";show("joinStart");(code?$("joinName"):$("roomIn")).focus();}
+$("createGame").onclick=function(){
+  var n=cleanName($("hostName").value);if(!n){$("hostErr").textContent="Type your name first.";return;}
+  if(!window.Peer){$("hostErr").textContent="The game couldn't load. Check the internet and refresh.";return;}
+  store(CFG.key+"_name",n);hostCreate(n);
+};
+$("roomIn").addEventListener("input",function(){this.value=this.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);});
+$("joinBtn").onclick=function(){
+  var code=$("roomIn").value,n=cleanName($("joinName").value);
+  if(code.length!==4){$("joinErr").textContent="The game code has 4 letters.";return;}
+  if(!n){$("joinErr").textContent="Type your name first.";return;}
+  if(!window.Peer){$("joinErr").textContent="The game couldn't load. Check the internet and refresh.";return;}
+  store(CFG.key+"_name",n);keepAwake();playerJoin(code,n);
+};
+var qs=new URLSearchParams(location.search).get("room");
+if(qs){qs=qs.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);openJoin(qs);}
+window.__game={get H(){return H;},get P(){return P;},viewFor:function(id){return viewFor(id);},send:function(m){send(m);}};
+
+var G={
+  start:function(){var g=H.g;g.used=g.used||{};H.round=0;G.nextQ();},
+  nextQ:function(){
+    seatPlayers();var g=H.g,ci=H.catChoice>=0?H.catChoice:-1,pool=[];
+    CATS.forEach(function(c,i){if(ci<0||ci===i)c.qs.forEach(function(q,j){pool.push([i,j]);});});
+    var fresh=pool.filter(function(x){return !g.used[x[0]+"|"+x[1]];});
+    if(!fresh.length){pool.forEach(function(x){delete g.used[x[0]+"|"+x[1]];});fresh=pool;}
+    var pick=fresh[rnd(fresh.length)];g.used[pick[0]+"|"+pick[1]]=1;
+    var q=CATS[pick[0]].qs[pick[1]],ans=q[1].split("|");
+    g.cat=pick[0];g.q=q[0];g.answer=ans[0];g.alts=ans.map(norm);g.fibs={};g.picks={};g.options=null;g.gained={};
+    H.round++;H.phase="write";hostBroadcast();
+  },
+  build:function(){
+    var g=H.g,groups={},order=[];
+    roster().forEach(function(id){var f=g.fibs[id];if(!f)return;var k=norm(f);if(!groups[k]){groups[k]={text:f,authors:[],real:false};order.push(k);}groups[k].authors.push(id);});
+    var opts=order.map(function(k){return groups[k];});opts.push({text:g.answer.charAt(0).toUpperCase()+g.answer.slice(1),authors:[],real:true});
+    g.options=shuffle(opts);H.phase="pick";
+  },
+  score:function(){
+    var g=H.g;g.gained={};roster().forEach(function(id){g.gained[id]=0;});
+    for(var pid in g.picks){var o=g.options[g.picks[pid]];if(!o||!H.players[pid])continue;
+      if(o.real){g.gained[pid]=(g.gained[pid]||0)+2;}
+      else o.authors.forEach(function(a){if(a!==pid&&H.players[a])g.gained[a]=(g.gained[a]||0)+1;});}
+    for(var id in g.gained){if(H.players[id])H.players[id].score+=g.gained[id];}
+    H.phase="reveal";
+  },
+  canPick:function(pid,i){var o=H.g.options[i];return o&&o.authors.indexOf(pid)<0;},
+  action:function(pid,m){
+    var g=H.g,r=roster();
+    if(pid==="HOST"&&G.hostAct(m))return;
+    if(r.indexOf(pid)<0)return;
+    if(m.t==="fib"&&H.phase==="write"){
+      var t=cleanText(m.text);if(!t){tell(pid,"Type a fake answer first.");return;}
+      if(g.alts.indexOf(norm(t))>=0){tell(pid,"Whoa, that's the REAL answer! Keep it secret and make up a fake one.");return;}
+      g.fibs[pid]=t;
+      if(r.every(function(id){return g.fibs[id]||!H.players[id].connected;}))G.build();
+      hostBroadcast();return;
+    }
+    if(m.t==="unfib"&&H.phase==="write"){delete g.fibs[pid];hostBroadcast();return;}
+    if(m.t==="pick"&&H.phase==="pick"){
+      var i=Number(m.i);if(!G.canPick(pid,i))return;g.picks[pid]=i;
+      if(r.every(function(id){return g.picks[id]!=null||!H.players[id].connected||!G.anyPick(id);}))G.score();
+      hostBroadcast();return;
+    }
+  },
+  hostAct:function(m){
+    if(m.t==="skipWrite"&&H.phase==="write"){G.build();hostBroadcast();}
+    else if(m.t==="skipPick"&&H.phase==="pick"){G.score();hostBroadcast();}
+    else if(m.t==="next"&&H.phase==="reveal"){G.nextQ();}
+    else if(m.t==="finish"&&H.phase==="reveal"){H.phase="final";hostBroadcast();}
+    else if(m.t==="again"&&H.phase==="final"){hostToLobby();}
+    else return false;
+    return true;
+  },
+  anyPick:function(id){return H.g.options.some(function(o,i){return G.canPick(id,i);});},
+  view:function(id,v){
+    var g=H.g,r=roster();
+    v.cat=CATS[g.cat].emoji+" "+CATS[g.cat].name;v.q=g.q;
+    if(H.phase==="write"){v.myFib=g.fibs[id]||"";v.done=r.filter(function(x){return g.fibs[x];}).length;v.total=r.length;}
+    if(H.phase==="pick"){
+      v.options=g.options.map(function(o,i){return{i:i,text:o.text,mine:o.authors.indexOf(id)>=0};});
+      v.myPick=g.picks[id]!=null?g.picks[id]:-1;v.done=r.filter(function(x){return g.picks[x]!=null;}).length;v.total=r.length;
+    }
+    if(H.phase==="reveal"){
+      v.answer=g.answer;v.gained=g.gained[id]||0;
+      v.myPick=g.picks[id]!=null?g.picks[id]:-1;
+      v.options=g.options.map(function(o,i){var by=[];for(var p in g.picks){if(g.picks[p]===i)by.push(nameOf(p));}
+        return{i:i,text:o.text,real:o.real,authors:o.authors.map(nameOf),mine:o.authors.indexOf(id)>=0,pickedBy:by};});
+    }
+  },
+  render:function(v){
+    if(v.phase==="write"){
+      $("wCat").textContent=v.cat;$("wQ").textContent=v.q;
+      var done=!!v.myFib;$("wForm").classList.toggle("hidden",done);$("wDone").classList.toggle("hidden",!done);$("wMine").textContent=v.myFib;
+      if(lastQ!==v.round){lastQ=v.round;$("fibIn").value="";}
+      $("wCount").textContent=v.done+" of "+v.total+" fibs in";
+      $("wCtl").classList.toggle("hidden",!v.isHost);show("write");return;
+    }
+    if(v.phase==="pick"){
+      $("pCat").textContent=v.cat;$("pQ").textContent=v.q;var list=$("pList");list.innerHTML="";
+      v.options.forEach(function(o){if(o.mine)return;
+        list.append(el("button",{class:"vbtn","aria-pressed":String(v.myPick===o.i),onclick:function(){send({t:"pick",i:o.i});}},el("span",{text:o.text}),v.myPick===o.i?el("span",{class:"badge",text:"✓"}):null));});
+      $("pCount").textContent=v.done+" of "+v.total+" picked";
+      $("pCtl").classList.toggle("hidden",!v.isHost);show("pick");return;
+    }
+    if(v.phase==="reveal"){
+      $("rQ").textContent=v.q;$("rA").textContent=v.answer;var list2=$("rList");list2.innerHTML="";
+      v.options.slice().sort(function(a,b){return (b.real?1:0)-(a.real?1:0);}).forEach(function(o){
+        var who=o.real?"✅ The truth":"Fib by "+o.authors.join(" & ");
+        list2.append(el("div",{class:"vbtn"+(o.real?"":" imp")+(o.mine?" mine":"")},
+          el("span",{},el("b",{text:o.text}),el("br"),el("span",{class:"who",text:who+(o.pickedBy.length?" · picked by "+o.pickedBy.join(", "):" · nobody picked it")})),
+          el("span",{class:"badge",text:"👆 "+o.pickedBy.length})));
+      });
+      scoreBoard(v,$("rScores"));$("rCtl").classList.toggle("hidden",!v.isHost);$("rWait").classList.toggle("hidden",v.isHost);
+      show("reveal");if(shownFor!==v.round){shownFor=v.round;myResult(v);}return;
+    }
+    if(v.phase==="final"){
+      var top=v.players.slice().sort(function(a,b){return b.score-a.score;}),best=top[0]?top[0].score:0,w=top.filter(function(p){return p.score===best;});
+      $("winner").textContent="🏆 "+w.map(function(p){return p.name;}).join(" & ")+(w.length>1?" win!":" wins!");
+      scoreBoard(v,$("fScores"));$("fCtl").classList.toggle("hidden",!v.isHost);$("fWait").classList.toggle("hidden",v.isHost);show("final");
+    }
+  }
+};
+var lastQ=-1,shownFor=-1;
+function myResult(v){
+  var p=v.options.filter(function(o){return o.i===v.myPick;})[0],mine=v.options.filter(function(o){return o.mine;})[0];
+  var fooled=mine?mine.pickedBy.length:0,lines=[];
+  var big=p&&p.real?"Truth found!":"Fooled!";var cls=p&&p.real?"good":(fooled?"sneaky":"bad");
+  if(!p)big="No pick!";
+  lines.push(p?(p.real?"You found the real answer. +2":"You picked "+p.authors.join(" & ")+"'s fib."):"You didn't pick an answer.");
+  if(mine)lines.push(fooled?"Your fib \""+mine.text+"\" fooled "+fooled+(fooled===1?" person":" people")+"! +"+fooled:"Nobody fell for your fib this time.");
+  lines.push("This question: +"+v.gained+(v.gained===1?" point":" points"));
+  overlay(cls,big,lines);
+}
+$("fibBtn").onclick=function(){send({t:"fib",text:$("fibIn").value});};
+$("fibIn").addEventListener("keydown",function(e){if(e.key==="Enter")$("fibBtn").click();});
+$("fibEdit").onclick=function(){$("fibIn").value=V&&V.myFib||"";send({t:"unfib"});};
+$("skipWrite").onclick=function(){if(V&&V.done<V.total&&!confirm("Not everyone has sent a fib. Show answers anyway?"))return;send({t:"skipWrite"});};
+$("skipPick").onclick=function(){if(V&&V.done<V.total&&!confirm("Not everyone has picked. Reveal anyway?"))return;send({t:"skipPick"});};
+$("nextQ").onclick=function(){send({t:"next"});};
+$("finish").onclick=function(){send({t:"finish"});};
+$("againBtn").onclick=function(){send({t:"again"});};
+$("seeMine").onclick=function(){if(V&&V.phase==="reveal")myResult(V);};
+
+})();
+</script>
+</body>
+</html>
